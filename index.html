@@ -40,10 +40,10 @@ new Vue({
 	el: '#app',
 	data:{
 		board:{
-			column: 10,
+			column: 3,
 			row: 4
 		},
-		result:makeArray(4,10,""),
+		result:makeArray(4,3,""),
 		resultText:"",
 		round:0,
 		curX:-1,
@@ -107,6 +107,9 @@ new Vue({
 					}
 					this.curX = this.switchX;
 					//Check x overflow
+					if(this.overflowX(this.switchX)){
+						this.shift(this.result);
+					}
 					this.curY=0;
 					this.draw(type);
 				}
@@ -183,7 +186,7 @@ new Vue({
 	color:blue;	
 }
 .box p.green{
-	color:green;	
+	text-decoration: line-through;
 }
 .box p.green span{
     position: absolute;
