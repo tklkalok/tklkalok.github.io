@@ -1,0 +1,194 @@
+<html>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+<script src="https://use.fontawesome.com/4332851ca5.js"></script>
+
+<body>
+	<div id="app">
+		<div class="btn-wrap">
+			<button @click="next('b')">莊嬴</button>
+			<button @click="next('p')">閒嬴</button>
+			<button @click="next('t')">和</button>
+		</div>
+		<div class="board">
+			<div :class="`b-row r-${y}`" v-for="y in board.row" :index="y">
+				<div :class="`b-column c-${x}`" v-for="x in board.column" :index="x">
+					<div :class="`box r-${y} c-${x}`">
+						<p :class="`fa fa-circle-o ${result[y-1][x-1]==''||result[y-1][x-1]==null?'':'show'} ${result[y-1][x-1]=='b'?'red':''} ${result[y-1][x-1]=='p'?'blue':''} ${result[y-1][x-1]&&result[y-1][x-1].charAt(0)=='t'?'green':''}` "><span>{{result[y-1][x-1]&&result[y-1][x-1].substring(1)}}</span></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
+
+<script>
+function makeArray(h, w, val) {
+    var arr = [];
+    for(let i = 0; i < h; i++) {
+        arr[i] = [];
+        for(let j = 0; j < w; j++) {
+            arr[i][j] = val;
+        }
+    }
+    return arr;
+}
+
+new Vue({
+	el: '#app',
+	data:{
+		board:{
+			column: 10,
+			row: 4
+		},
+		result:makeArray(4,10,""),
+		resultText:"",
+		round:0,
+		curX:-1,
+		curY:0,
+		switchX:-1,
+		tieCount:0,
+		prev:null,
+		turn:false,
+		beforeTie:null
+	},
+	methods:{
+		next:function (type){
+			this.round++;
+			switch(type){
+				case 'b':
+					//banker win
+					this.resultTest="Banker Win";
+					break;
+				case 'p':
+					//player win
+					this.resultTest="Player Win";
+					break;
+				case 't':
+					//tie
+					this.resultTest="Tie Win";
+					break;
+				default:
+			}
+			this.cal(type);
+		},
+		cal:function(type){
+			if(type!='t'){
+				this.tieCount=0;
+				//If not tie
+				if(this.prev==type||(this.prev=="t"&&type==this.beforeTie)){
+					this.prev=type;
+					//Continue win
+					this.curY++;
+					//Check Spent
+					if(this.turn||this.overflowY(this.curY)||this.used(this.curX,this.curY)){
+						this.curY--;
+						this.curX++; 
+						this.turn=true;
+						//check x overflow
+						if(this.overflowX(this.curX)){
+							this.shift(this.result);
+						}
+					}
+					this.draw(type);
+				}else{
+					//Switch
+					this.prev=type;
+					this.turn=false;
+					this.switchX++;
+					while(this.used(this.switchX,0)) {
+						this.switchX++
+						if(this.overflowX(this.switchX)){
+							this.shift(this.result);
+							break;
+						}
+					}
+					this.curX = this.switchX;
+					//Check x overflow
+					this.curY=0;
+					this.draw(type);
+				}
+			}else{
+				//Continue but tie
+				if(this.prev!='t') this.beforeTie=this.prev;
+				this.prev=type;
+				this.tieCount++;
+				this.drawTie(type+(this.tieCount>=2?this.tieCount:''));
+				
+			}
+		},
+		draw:function(type){
+			this.$set(this.result[this.curY], this.curX, type);
+		},
+		drawTie:function(type){
+			this.$set(this.result[this.curY], this.curX, type);
+		},
+		used:function(x,y){
+			if(this.result[y]&&(this.result[y][x]!="")){
+				if(this.result[y][x]==null) return false;
+				return true;
+			}
+			return false;
+		},
+		overflowY:function(y){
+			return y>this.board.row-1;
+		},
+		overflowX:function(x){
+			if(x>this.board.column-1){
+				return true;
+			}
+		},
+		shift:function(result){
+			for(let i=0; i<result.length; i++){
+				result[i].shift();
+			}
+			if(this.curX>=0) this.curX--;
+			if(this.switchX>=0) this.switchX--;
+		}
+	}
+})
+
+</script>
+
+<style>
+.board{
+	margin:30px 0px;
+}
+.b-row{}
+.b-column{
+	display:inline-block;
+}
+.box{
+	width:30px;
+	height:30px;
+	border: 1px solid black;
+	position:relative;
+}
+.box p{
+    position: absolute;
+	display:none;
+    top: 0;
+    font-size: 31px;
+    margin: 1;
+}
+.box p.show{
+	display:block;
+}
+.box p.red{
+	color:red;
+}
+.box p.blue{
+	color:blue;	
+}
+.box p.green{
+	color:green;	
+}
+.box p.green span{
+    position: absolute;
+    left: 9px;
+    font-size: 17px;
+    top: 6px;
+    font-family: monospace;
+	}
+</style>
